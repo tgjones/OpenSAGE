@@ -37,7 +37,7 @@ namespace OpenSage.Gui.Apt
                 return;
             }
 
-            if ((gt.TotalTime - _lastUpdate.TotalTime).TotalMilliseconds < Context.MillisecondsPerFrame)
+            if ((gt.TotalTime - _lastUpdate.TotalTime).TotalMilliseconds < Context.MsPerFrame)
             {
                 return;
             }

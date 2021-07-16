@@ -11,7 +11,7 @@ namespace OpenSage.Gui.Apt.ActionScript.Opcodes
 
         public override void Execute(ActionContext context)
         {
-            if (context.Scope.Item is SpriteItem si)
+            if (context.This.Item is SpriteItem si)
             {
                 si.Play();
             }
@@ -31,7 +31,7 @@ namespace OpenSage.Gui.Apt.ActionScript.Opcodes
 
         public override void Execute(ActionContext context)
         {
-            if (context.Scope.Item is SpriteItem si)
+            if (context.This.Item is SpriteItem si)
             {
                 si.Stop();
             }
@@ -53,7 +53,7 @@ namespace OpenSage.Gui.Apt.ActionScript.Opcodes
         public override void Execute(ActionContext context)
         {
             var frame = Parameters[0].ToInteger();
-            if (context.Scope.Item is SpriteItem si)
+            if (context.This.Item is SpriteItem si)
             {
                 si.GotoFrame(frame);
             }
@@ -77,7 +77,7 @@ namespace OpenSage.Gui.Apt.ActionScript.Opcodes
             bool play = Convert.ToBoolean(Parameters[0].ToInteger() & 0x01);
             var frame = context.Pop();
 
-            if (context.Scope.Item is SpriteItem si)
+            if (context.This.Item is SpriteItem si)
             {
                 if (frame.Type == ValueType.String)
                 {
@@ -116,7 +116,7 @@ namespace OpenSage.Gui.Apt.ActionScript.Opcodes
         {
             var label = Parameters[0].ToString();
 
-            if (context.Scope.Item is SpriteItem si)
+            if (context.This.Item is SpriteItem si)
                 si.Goto(label);
             else
                 throw new InvalidOperationException();
@@ -132,7 +132,7 @@ namespace OpenSage.Gui.Apt.ActionScript.Opcodes
 
         public override void Execute(ActionContext context)
         {
-            if (context.Scope.Item is SpriteItem si)
+            if (context.This.Item is SpriteItem si)
             {
                 si.NextFrame();
             }

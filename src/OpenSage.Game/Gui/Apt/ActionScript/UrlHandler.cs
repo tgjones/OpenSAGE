@@ -21,7 +21,7 @@ namespace OpenSage.Gui.Apt.ActionScript
             else
             {
                 //DO STUFF
-                var targetObject = context.Scope.Variables[target].ToObject();
+                var targetObject = context.This.Variables[target].ToObject();
 
                 if (!(targetObject.Item is SpriteItem))
                 {

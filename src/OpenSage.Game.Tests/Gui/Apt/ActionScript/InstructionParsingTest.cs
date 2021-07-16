@@ -73,7 +73,7 @@ namespace OpenSage.Tests.Gui.Apt.ActionScript
                 instructionWriter.WriteSimpleInstruction(InstructionType.SetVariable);
                 instructionWriter.WriteSimpleInstruction(InstructionType.End);
                 instructionWriter.WriteSimpleInstruction(InstructionType.EA_PushOne);
-                instructionWriter.WriteSimpleInstruction(InstructionType.Not);
+                instructionWriter.WriteSimpleInstruction(InstructionType.LogicalNot);
                 instructionWriter.WriteSimpleInstruction(InstructionType.BranchIfTrue, 18);
                 instructionWriter.WriteSimpleInstruction(InstructionType.EA_PushString, variableNamePosition);
                 instructionWriter.WriteSimpleInstruction(InstructionType.EA_PushString, rightValuePosition);
@@ -115,7 +115,7 @@ namespace OpenSage.Tests.Gui.Apt.ActionScript
 
             var context = new ObjectContext(new SpriteItem());
             var vm = new VM();
-            vm.Execute(collection, context, new List<ConstantEntry>());
+            vm.Execute(collection, context, null);
             // Assert that during execution of instructions, the right value is set
             Assert.True(context.GetMember(paramName).ToString().Equals(rightValue));
         }

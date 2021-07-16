@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using OpenSage.Data.Apt;
+using OpenSage.Gui.Apt.ActionScript;
 using OpenSage.Gui.Apt.ActionScript.Opcodes;
 
 namespace OpenSage.Gui.Apt.ActionScript
@@ -13,8 +14,10 @@ namespace OpenSage.Gui.Apt.ActionScript
     {
         private TimeInterval _lastTick;
         private Dictionary<string, ValueTuple<TimeInterval, int, Function, ObjectContext, Value[]>> _intervals;
+        private Stack<ActionContext> _callStack;
 
         public ObjectContext GlobalObject { get; }
+        public ActionContext GlobalContext { get; }
         public ObjectContext ExternObject { get; }
 
         // Delegate to call a function inside the engine
@@ -29,12 +32,22 @@ namespace OpenSage.Gui.Apt.ActionScript
         public delegate AptFile HandleExternalMovie(string movie);
         public HandleExternalMovie MovieHandler;
 
+        public VM(HandleCommand hc, HandleExternVariable hev, HandleExternalMovie hem) : this()
+        {
+            CommandHandler = hc;
+            VariableHandler = hev;
+            MovieHandler = hem;
+        }
         public VM()
         {
             GlobalObject = new ObjectContext();
+            GlobalContext = new ActionContext(GlobalObject, GlobalObject, null, 4);
             ExternObject = new ExternObject(this);
             _intervals = new Dictionary<string, ValueTuple<TimeInterval, int, Function, ObjectContext, Value[]>>();
+            _callStack = new Stack<ActionContext>();
         }
+
+        // interval operations
 
         public void CreateInterval(string name, int duration, Function func, ObjectContext ctx, Value[] args)
         {
@@ -67,62 +80,67 @@ namespace OpenSage.Gui.Apt.ActionScript
             _intervals.Remove(name);
         }
 
-        public Value Execute(Function func, Value[] args, ObjectContext scope)
-        {
-            var code = func.Instructions;
+        // stack operations
 
+        public void PushContext(ActionContext context) { _callStack.Push(context); }
+        public ActionContext PopContext() { return _callStack.Pop(); }
+        public ActionContext CurrentContext() { return _callStack.Peek(); }
+        public void ForceReturn() { }
+
+
+        public ActionContext GetActionContext(ActionContext outerVar, ObjectContext thisVar, int numRegisters, List<Value> consts, InstructionCollection code)
+        {
+            if (thisVar is null) thisVar = GlobalObject;
+            var context = new ActionContext(GlobalObject, thisVar, outerVar, numRegisters)
+            {
+                Apt = outerVar.Apt,
+                Stream = new InstructionStream(code),
+                Constants = consts,
+            };
+            return context;
+        }
+
+        public ActionContext GetActionContext(AptContext apt, ObjectContext thisVar, int numRegisters, List<Value> consts, InstructionCollection code)
+        {
+            if (thisVar is null) thisVar = GlobalObject;
+            var context = new ActionContext(GlobalObject, thisVar, null, numRegisters)
+            {
+                Apt = apt,
+                Stream = new InstructionStream(code),
+                Constants = consts,
+            };
+            return context;
+        }
+        /*
+        public ActionContext GetActionContext(int numRegisters, InstructionCollection code, ObjectContext scope, List<ConstantEntry> consts)
+        {
             var stream = new InstructionStream(code);
 
-            var localScope = new ObjectContext(scope.Item)
+            var context = new ActionContext(GlobalObject, scope, null, numRegisters)
             {
-                Constants = func.Constants,
-                Variables = scope.Variables
-            };
-
-            var context = new ActionContext(func.NumberRegisters)
-            {
-                Global = GlobalObject,
-                Scope = localScope,
                 Apt = scope.Item.Context,
                 Stream = stream,
-                Constants = scope.Item.Character.Container.Constants.Entries
+                Constants = consts,
             };
+            return context;
+        }
+        */
+        // execution
 
-            //parameters in the old version are just stored as local variables
-            if (!func.IsNewVersion)
+        public Value Execute(Function func, Value[] args, ObjectContext thisVar)
+        {
+            if (func == Function.FunctionConstructor)
             {
-                for (var i = 0; i < func.Parameters.Count; ++i)
-                {
-                    var name = func.Parameters[i].ToString();
-                    bool provided = i < args.Length;
-
-                    context.Params[name] = provided ? args[i] : Value.Undefined();
-                }
+                throw new NotImplementedException("Unfortunately, we do not have an interpreter yet.");
             }
-            else
+            else if (func == Function.ObjectConstructor)
             {
-                for (var i = 0; i < func.Parameters.Count; i += 2)
-                {
-                    var reg = func.Parameters[i].ToInteger();
-                    var name = func.Parameters[i + 1].ToString();
-                    var argIndex = i / 2;
-                    bool provided = (argIndex) < args.Length;
-
-                    if (reg != 0)
-                    {
-                        context.Registers[reg] = provided ? args[argIndex] : Value.Undefined();
-                    }
-                    else
-                    {
-                        context.Params[name] = provided ? args[argIndex] : Value.Undefined();
-                    }
-                }
+                return Value.FromObject(new ObjectContext());
             }
 
-            if (func.IsNewVersion)
-            {
-                context.Preload(func.Flags);
-            }
+            var context = func.GetContext(this, args, thisVar);
+            var stream = context.Stream;
+ 
 
             var instr = stream.GetInstruction();
             InstructionBase prevInstr = null;
@@ -144,18 +162,19 @@ namespace OpenSage.Gui.Apt.ActionScript
             return Value.Undefined();
         }
 
-        public void Execute(InstructionCollection code, ObjectContext scope, List<ConstantEntry> consts)
+        public InstructionBase ExecuteOnce(ActionContext context)
         {
-            var stream = new InstructionStream(code);
+            var instr = context.Stream.GetInstruction();
+            instr.Execute(context);
+            return instr;
+        }
+
+        // TODO all should be replaced. This is an extremely dangerous call.
+        public void Execute(InstructionCollection code, ObjectContext scope, AptContext apt) { Execute(GetActionContext(apt, scope, 4, null, code)); }
+        public void Execute(ActionContext context)
+        { 
+            var stream = context.Stream;
             var instr = stream.GetInstruction();
-            var context = new ActionContext(4)
-            {
-                Global = GlobalObject,
-                Scope = scope,
-                Apt = scope.Item.Context,
-                Stream = stream,
-                Constants = consts,
-            };
 
             InstructionBase prev = null;
 

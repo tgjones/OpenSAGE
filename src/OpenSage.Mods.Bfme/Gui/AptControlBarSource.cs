@@ -110,10 +110,14 @@ namespace OpenSage.Mods.Bfme
         private void ClearCommandbuttons()
         {
             var aptCommandButtons = _root.ScriptObject.GetMember("CommandButtons").ToObject();
+            // TODO what does this mean?
+            /*
             if (aptCommandButtons.Constants.Count == 0)
             {
                 return;
             }
+            */
+            throw new NotImplementedException();
 
             for (var i = 1; i <= 6; i++)
             {

@@ -8,7 +8,7 @@ namespace OpenSage.Gui.Apt.ActionScript.Library
         protected Dictionary<string, Func<Value[], Value>> _builtinFunctions;
         protected Dictionary<string, Func<Value>> _builtinVariablesGet;
 
-        public BuiltinClass()
+        public BuiltinClass() : base()
         {
             _builtinFunctions = new Dictionary<string, Func<Value[], Value>>();
             _builtinVariablesGet = new Dictionary<string, Func<Value>>();

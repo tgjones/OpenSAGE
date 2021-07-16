@@ -14,6 +14,7 @@ namespace OpenSage.Gui.Apt.ActionScript.Library
         private static readonly Dictionary<string, Action<ActionContext, ObjectContext, Value[]>> BuiltinFunctions;
         private static readonly Dictionary<string, Func<ObjectContext, Value>> BuiltinVariablesGet;
         private static readonly Dictionary<string, Action<ObjectContext, Value>> BuiltinVariablesSet;
+        public static DateTime InitTimeStamp { get; } = DateTime.Now;
 
         static Builtin()
         {
@@ -21,7 +22,9 @@ namespace OpenSage.Gui.Apt.ActionScript.Library
             BuiltinClasses = new Dictionary<string, Func<Value[], Value>>
             {
                 ["Color"] = args => Value.FromObject(new ASColor()),
-                ["Array"] = args => Value.FromObject(new ASArray(args))
+                ["Array"] = args => Value.FromObject(new ASArray(args)),
+                ["Object"] = args => Value.FromObject(new ObjectContext()),
+                ["Function"] = args => throw new NotImplementedException("Nonetheless this is not the real ActionScript. "),
             };
 
             // list of builtin variables
@@ -60,7 +63,7 @@ namespace OpenSage.Gui.Apt.ActionScript.Library
                     var transform = ctx.Item.Transform;
                     ctx.Item.Transform =
                         transform.WithColorTransform(transform.ColorTransform.WithRGB(r, g, b));
-                }
+                },
             };
 
             // list of builtin functions
@@ -75,6 +78,8 @@ namespace OpenSage.Gui.Apt.ActionScript.Library
                 // Global constructors / functions
                 ["Boolean"] = BoolFunc,
                 ["attachMovie"] = AttachMovie,
+                ["getTime"] = (actx, ctx, args) => GetTime(actx),
+                
             };
         }
 
@@ -201,6 +206,14 @@ namespace OpenSage.Gui.Apt.ActionScript.Library
             }
         }
 
+
+        private static void GetTime(ActionContext context)
+        {
+            var result_ = DateTime.Now - Builtin.InitTimeStamp;
+            var result = Value.FromFloat(result_.TotalMilliseconds);
+            context.Push(result);
+        }
+
         private static void LoadMovie(ActionContext context, ObjectContext ctx, Value[] args)
         {
             var url = Path.ChangeExtension(args[0].ToString(), ".apt");
@@ -240,5 +253,6 @@ namespace OpenSage.Gui.Apt.ActionScript.Library
             var result = Value.FromBoolean(args[0].ToBoolean());
             context.Push(result);
         }
+
     }
 }

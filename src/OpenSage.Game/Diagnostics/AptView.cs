@@ -124,7 +124,9 @@ namespace OpenSage.Diagnostics
                         }
                         ImGuiUtility.EndPropertyList();
                     }
-
+                    // Constants are now handled by ActionContext
+                    // TODO: How to view these constants?
+                    /*
                     if (ImGui.CollapsingHeader("Constants", ImGuiTreeNodeFlags.DefaultOpen))
                     {
                         ImGuiUtility.BeginPropertyList();
@@ -138,6 +140,7 @@ namespace OpenSage.Diagnostics
                         }
                         ImGuiUtility.EndPropertyList();
                     }
+                    */
                 }
                 ImGui.EndChild();
             }
